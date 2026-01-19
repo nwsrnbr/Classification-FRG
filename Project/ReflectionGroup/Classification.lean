@@ -24,30 +24,6 @@ variable (P : RootPairing ι R M N) [P.IsCrystallographic] {b : P.Base}
 
 universe u
 
-namespace RootPairing
-
-variable {T : Type u} [Zero T] [DecidableEq T]
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-end RootPairing
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-def cartanToCoxeter (A : Matrix n n ℤ) : Matrix n n ℕ :=
-  fun i j =>
-    if i = j then 1
-    else
-      let prod := A i j * A j i
-      match prod with
-      | 0 => 2
-      | 1 => 3
-      | 2 => 4
-      | 3 => 6
-      | _ => 0   -- 本来 ∞ だが，ℕ からはみ出さないよう 0 にしている．
-
-example : cartanToCoxeter (CartanMatrix.E₈) = CoxeterMatrix.E₈.M := by
-  decide
-
 namespace MyCartanMatrix
 open Matrix
 section Determinant
@@ -75,7 +51,7 @@ def ind_matrix (Y : Matrix (Fin n) (Fin n) ℝ) (c : ℝ) : Matrix (Fin (n + 1))
 def isTopLeftBlock (Y : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :=
   Y.submatrix (fun i => Fin.castSucc i) (fun j => Fin.castSucc j)
 
-theorem ind_det (X : Matrix (Fin (n + 1 + 1)) (Fin (n + 1 + 1)) ℝ)
+lemma ind_det (X : Matrix (Fin (n + 1 + 1)) (Fin (n + 1 + 1)) ℝ)
     (Y : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
     (Z : Matrix (Fin n) (Fin n) ℝ)
     (c : ℝ)
@@ -124,37 +100,6 @@ theorem ind_det (X : Matrix (Fin (n + 1 + 1)) (Fin (n + 1 + 1)) ℝ)
         · congr
         repeat'
           omega
-
-/-
-lemma Aₙ_submatrix : PrincipalSubmatrix n hn (Aₙ n) = Aₙ (n - 1) := by
-  ext i j
-  simp [Aₙ]
-
-lemma Bₙ_submatrix (hn : 1 ≤ n) : PrincipalSubmatrix n hn (Bₙ n) = Aₙ (n - 1) := by
-  ext i j
-  simp [Bₙ, Aₙ]
-  grind
-
-lemma Cₙ_submatrix (hn : 1 ≤ n) : PrincipalSubmatrix n hn (Cₙ n) = Aₙ (n - 1) := by
-  ext i j
-  simp [Cₙ, Aₙ]
-  omega
-
-lemma Dₙ_submatrix (hn : 5 ≤ n) : PrincipalSubmatrix n (by linarith) (Dₙ n) = Dₙ (n - 1) := by
-  ext i j
-  simp [Dₙ, Dₙ]
-
-lemma D₄_submatrix : PrincipalSubmatrix 4 (by linarith) (Dₙ 4) = Aₙ 3 := by
-  ext i j
-  simp [Dₙ, Aₙ]
-  grind
-
-lemma F₄_submatrix : PrincipalSubmatrix 4 (by linarith) F₄ = Bₙ 3 := by
-  ext i j
-  simp [F₄, Bₙ]
-  --grind
-  sorry
--/
 
 variable (n : ℕ)
 
@@ -278,25 +223,25 @@ theorem det_Dₙ : (SymmMatrix (Dₙ n)).det =
           grind
 
 /-
-noncomputable def D'ₙ :=
+noncomputable def Dₙ_rev :=
   let e := Equiv.ofBijective (fun i : Fin n ↦ i.rev) Fin.rev_bijective
   (reindex e e) (Dₙ n)
 -/
 
-def D'ₙ : Matrix (Fin n) (Fin n) ℤ :=
+def Dₙ_rev : Matrix (Fin n) (Fin n) ℤ :=
   Matrix.of fun i j : Fin n ↦
     if i = j then 2
       else (if i = n - 1 ∧ j = n - 3 ∨ j = n - 1 ∧ i = n - 3 then -1
         else(if i = n - 1 ∧ j = n - 2 ∨ j = n - 1 ∧ i = n - 2 then 0
           else (if (j : ℕ) + 1 = i ∨ (i : ℕ) + 1 = j then -1 else 0)))
 
-lemma det_Dₙ_eq_det_D'ₙ5 :(SymmMatrix (D'ₙ 5)).det = (SymmMatrix (Dₙ 5)).det := by
+lemma det_Dₙ_eq_det_Dₙ_rev5 :(SymmMatrix (Dₙ_rev 5)).det = (SymmMatrix (Dₙ 5)).det := by
   let e := Equiv.ofBijective (fun i : Fin 5 ↦ i.rev) Fin.rev_bijective
   rw [← det_reindex_self e]
   congr 1
   ext i j
   calc
-    _ = (SymmMatrix (D'ₙ 5)) i.rev j.rev := by
+    _ = (SymmMatrix (Dₙ_rev 5)) i.rev j.rev := by
       simp
       congr
       · nth_rw 1 [← i.rev_rev]; rw [Equiv.ofBijective_symm_apply_apply]
@@ -307,30 +252,29 @@ lemma det_Dₙ_eq_det_D'ₙ5 :(SymmMatrix (D'ₙ 5)).det = (SymmMatrix (Dₙ 5))
       <;> rfl
 
 theorem det_E₆ : (SymmMatrix E₆).det = 3 := by
-  rw [ind_det (SymmMatrix E₆) (SymmMatrix (D'ₙ (4 + 1))) (SymmMatrix (Aₙ 4)) (-1 : ℝ)]
-  · simp [det_Dₙ_eq_det_D'ₙ5, det_Dₙ, det_Aₙ]; norm_num
+  rw [ind_det (SymmMatrix E₆) (SymmMatrix (Dₙ_rev (4 + 1))) (SymmMatrix (Aₙ 4)) (-1 : ℝ)]
+  · simp [det_Dₙ_eq_det_Dₙ_rev5, det_Dₙ, det_Aₙ]; norm_num
   · ext i j
-    simp [SymmMatrix, ind_matrix, E₆, D'ₙ, Fin.castLT]
+    simp [SymmMatrix, ind_matrix, E₆, Dₙ_rev, Fin.castLT]
     fin_cases i
     <;> fin_cases j
     <;> simp
   · ext i j
-    simp [isTopLeftBlock, SymmMatrix, D'ₙ, Aₙ]
+    simp [isTopLeftBlock, SymmMatrix, Dₙ_rev, Aₙ]
     fin_cases i
     <;> fin_cases j
     <;> simp
-
 
 theorem det_E₇ : (SymmMatrix E₇).det = 2 := by
-  rw [ind_det (SymmMatrix E₇) (SymmMatrix E₆) (SymmMatrix (D'ₙ 5)) (-1 : ℝ)]
-  · simp [det_E₆, det_Dₙ_eq_det_D'ₙ5, det_Dₙ]; norm_num
+  rw [ind_det (SymmMatrix E₇) (SymmMatrix E₆) (SymmMatrix (Dₙ_rev 5)) (-1 : ℝ)]
+  · simp [det_E₆, det_Dₙ_eq_det_Dₙ_rev5, det_Dₙ]; norm_num
   · ext i j
     simp [SymmMatrix, ind_matrix, E₇, E₆, Fin.castLT]
     fin_cases i
     <;> fin_cases j
     <;> simp
   · ext i j
-    simp [isTopLeftBlock, SymmMatrix, E₆, D'ₙ]
+    simp [isTopLeftBlock, SymmMatrix, E₆, Dₙ_rev]
     fin_cases i
     <;> fin_cases j
     <;> simp
@@ -374,13 +318,74 @@ theorem det_G₂ : (SymmMatrix G₂).det = 1 := by
   rw [this]
   simp; norm_num
 
+/-
+theorem det_B'ₙ : (SymmMatrix (B'ₙ n)).det = if n = 0 ∨ n = 1 ∨ n = 2 then 2 else 0 := by
+  induction' n using Nat.strongRec with n ih
+  cases n with
+  | zero => simp [SymmMatrix]
+  | succ n =>
+    cases n with
+    | zero =>
+      have : SymmMatrix (B'ₙ 1) = !![2, -√2; -√2, 2] := by
+        simp [SymmMatrix, B'ₙ]
+        ext i j
+        fin_cases i
+        <;> fin_cases j
+        <;> simp
+      simp [this]; norm_num
+    | succ n =>
+      have h1 := ih (n) (Nat.lt_succ_of_lt (Nat.lt_succ_self _))
+      have h2 := ih (n+1) (Nat.lt_succ_self _)
+      by_cases hn : n = 0
+      · rw [hn]
+        have : SymmMatrix (B'ₙ 2) = !![2, 0, -1; 0, 2, -√2; -1, -√2, 2] := by
+          simp [SymmMatrix, B'ₙ]
+          ext i j
+          fin_cases i
+          <;> fin_cases j
+          <;> simp
+        simp [this, Matrix.det_fin_three]
+        ring_nf
+        rw [Real.sq_sqrt zero_le_two]
+        norm_num
+      · rw [ind_det (SymmMatrix (B'ₙ (n + 1 + 1))) (SymmMatrix (Dₙ (n  + 1 + 1))) (SymmMatrix (Dₙ (n + 1))) (-√2 : ℝ)]
+        · simp [det_Dₙ]
+          split_ifs
+          norm_num
+        · ext i j
+          simp [SymmMatrix, ind_matrix, B'ₙ, Dₙ, Fin.castLT]
+          by_cases hi : i < n + 1 + 1
+          by_cases hj : j < n + 1 + 1
+          · simp [hi, hj]
+            split_ifs
+            repeat'
+              grind
+            congr
+            · grind
+            · split_ifs
+              repeat'
+                grind
+
+          · simp [hi, hj]
+            have : j = n + 1 + 1 := by omega
+            split_ifs
+            <;> aesop
+          · simp [hi]
+            have : i = n + 1 + 1 := by omega
+            split_ifs
+            <;> aesop
+        · ext i j
+          simp [isTopLeftBlock, SymmMatrix, Dₙ, Fin.castSucc, Fin.castAdd, Fin.castLE]
+          grind
+-/
+
 end Determinant
 
 section SubGraph
 
 variable {n : ℕ}
 
-/-- n 次正方行列 C から最後の行と列を取り除いた (n - 1) 次正方行列 -/
+/-- n 次正方行列 C から最後の行と列を取り除いた n 次正方行列 -/
 def PrincipalSubmatrix (C : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ) :=
   C.submatrix (fun i => Fin.castSucc i) (fun j => Fin.castSucc j)
 
@@ -391,7 +396,7 @@ def LowerLabel (C : Matrix (Fin n) (Fin n) ℤ) :=
       match C i j with
       | -1 => -1
       | -2 => -1
-      | -3 => -1
+      | -3 => -2
       | _ => 0
 
 theorem sub_of_pos_def (C : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ) (h : (SymmMatrix C).PosDef) :
@@ -482,6 +487,7 @@ theorem sub_of_pos_def' (C : Matrix (Fin n) (Fin n) ℤ) (h : (SymmMatrix C).Pos
             split
             <;> split
             <;> simp [*, mul_comm]
+            <;> norm_num
         all_goals apply abs_nonneg
       _ = ∑ (i : Fin n), ∑ (j : Fin n), SymmMatrix (LowerLabel C) i j * |x i * x j| := by
         simp [abs_mul, ← mul_assoc, mul_comm]
