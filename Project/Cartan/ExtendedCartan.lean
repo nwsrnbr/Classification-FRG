@@ -1,9 +1,15 @@
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.LinearAlgebra.Matrix.Symmetric
+import Mathlib.Data.Matrix.Cartan
+import Project.Cartan.Determinant
 
-namespace MyCartanMatrix
+namespace CartanMatrix
+
+open Matrix
 
 variable (n : ℕ)
+/-
+
 
 /-- The Cartan matrix of type Aₙ.
 
@@ -139,6 +145,23 @@ with `CartanMatrix.F₄`, in the sense that all non-zero values below the diagon
 def G₂ : Matrix (Fin 2) (Fin 2) ℤ :=
   !![2, -3; -1, 2]
 
+-/
+
+def C_rev := Matrix.of fun i j : Fin n ↦ C n (i.rev) (j.rev)
+
+lemma C_rev_eq (n : ℕ) : C_rev n =
+    let e := Equiv.ofBijective (fun i : Fin n ↦ i.rev) Fin.rev_bijective
+  (reindex e e) (C n) := by
+  ext i j
+  simp [C_rev, reindex, Equiv.ofBijective, Function.surjInv]
+  grind
+
+lemma det_C_rev : (C_rev n).det = (C n).det := by
+  simp [C_rev_eq]
+
+--lemma det_SymmMatrix_C_rev : (SymmMatrix (C_rev n))
+
+
 /-- The Cartan matrix of type A'ₙ.
 
 The corresponding Coxeter-Dynkin diagram is:
@@ -147,7 +170,7 @@ The corresponding Coxeter-Dynkin diagram is:
     o --- o --- o ⬝ ⬝ ⬝ ⬝ o --- o
 ```
 -/
-def A'ₙ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
+def A' : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
   Matrix.of fun i j : Fin (n + 1) ↦
     if i = j then 2
       else (if (j : ℕ) + 1 = i ∨ (i : ℕ) + 1 = j then -1
@@ -164,14 +187,13 @@ The corresponding Coxeter-Dynkin diagram is:
     o
 ```
 -/
-def B'ₙ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
+def B' : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
   Matrix.of fun i j : Fin (n + 1) ↦
-    if i = j then 2
-      else (if i = (0 : ℕ) ∧ j = (2 : ℕ) ∨ j = (0 : ℕ) ∧ i = (2 : ℕ) then -1
-        else(if i = (0 : ℕ) ∧ j = (1 : ℕ) ∨ j = (0 : ℕ) ∧ i = (1 : ℕ) then 0
-          else (if i = n - 1 ∧ j = n then -2
-            else (if j = n - 1 ∧ i = n then -1
-              else (if (j : ℕ) + 1 = i ∨ (i : ℕ) + 1 = j then -1 else 0)))))
+    if h : i < n ∧ j < n then (D_rev n) (i.castLT h.1) (j.castLT h.2)
+    else if i = j then 2
+    else if (j : ℕ) + 1 = i then -2
+    else if (i : ℕ) + 1 = j then -1
+    else 0
 
 /-- The Cartan matrix of type C'ₙ.
 
@@ -181,14 +203,13 @@ The corresponding Coxeter-Dynkin diagram is:
     o =>= o --- o ⬝ ⬝ ⬝ ⬝ o =<= o
 ```
 -/
-def C'ₙ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
+def C' : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
   Matrix.of fun i j : Fin (n + 1) ↦
-    if i = j then 2
-      else (if i = n - 1 ∧ j = n then -1
-        else (if j = n - 1 ∧ i = n then -2
-          else (if i = (1 : ℕ) ∧ j = (0 : ℕ) then -1
-            else (if j = (1 : ℕ) ∧ i = (0 : ℕ) then -2
-              else (if (j : ℕ) + 1 = i ∨ (i : ℕ) + 1 = j then -1 else 0)))))
+    if h : i < n ∧ j < n then (C_rev n) (i.castLT h.1) (j.castLT h.2)
+    else if i = j then 2
+    else if (j : ℕ) + 1 = i then -1
+    else if (i : ℕ) + 1 = j then -2
+    else 0
 
 /-- The Cartan matrix of type D'ₙ.
 
@@ -201,15 +222,13 @@ The corresponding Coxeter-Dynkin diagram is:
     o                       o
 ```
 -/
-def D'ₙ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
+def D' : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
   Matrix.of fun i j : Fin (n + 1) ↦
-    if i = j then 2
-      else (if i = (0 : ℕ) ∧ j = (2 : ℕ) ∨ j = (0 : ℕ) ∧ i = (2 : ℕ) then -1
-        else(if i = (0 : ℕ) ∧ j = (1 : ℕ) ∨ j = (0 : ℕ) ∧ i = (1 : ℕ) then 0
-          else (if i = n - 1 ∧ j = n - 3 ∨ j = n - 1 ∧ i = n - 3 then -1
-            else(if i = n - 2 ∧ j = n - 3 ∨ j = n - 2 ∧ i = n - 3 then 0
-              else (if (j : ℕ) + 1 = i ∨ (i : ℕ) + 1 = j then -1 else 0)))))
--- Mathlib.GroupTheory.Coxeter.Matrix の Dₙ の定義は多分間違ってる(ループができてしまう)
+    if h : i < n ∧ j < n then (D n) (i.castLT h.1) (j.castLT h.2)
+    else if i = j then 2
+    else if (j : ℕ) + 2 = i then -1
+    else if (i : ℕ) + 2 = j then -1
+    else 0
 
 /-- The Cartan matrix of type E'₆.
 
@@ -297,9 +316,7 @@ def G'₂ : Matrix (Fin 3) (Fin 3) ℤ :=
     -1, 2, -1;
     0, -1, 2]
 
-#eval A'ₙ 4
-
 /-
 
 -/
-end MyCartanMatrix
+end CartanMatrix

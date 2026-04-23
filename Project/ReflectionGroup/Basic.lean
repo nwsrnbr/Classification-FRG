@@ -1,3 +1,5 @@
+/-
+
 --import Mathlib.Analysis.InnerProductSpace.Projection
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
@@ -37,7 +39,7 @@ namespace FiniteReflectionGroup
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-
-def essFRG_to_RootSystem (W : essFRG ι R M) (W' : essFRG ι R M) : RootSystem ι R M M where
+def essFRG_to_RootSystem (W : essFRG ι R M) (W' : essFRG ι R M) : IsRootSystem ι R M M where
   toFun := by
     rcases W.eq_two with f
   root := W.v
@@ -48,7 +50,7 @@ def essFRG_to_RootSystem (W : essFRG ι R M) (W' : essFRG ι R M) : RootSystem �
     simp
 -/
 
-def RootSystem_to_essFRG (P : RootSystem ι R M N) : essFRG ι R M where
+def RootSystem_to_essFRG (P : IsRootSystem ι R M N) : essFRG ι R M where
   W := Subgroup.closure (Set.range fun i ↦ P.reflection i)
   isFinite := by sorry
   α := P.root
@@ -69,9 +71,9 @@ def RootSystem_to_essFRG (P : RootSystem ι R M N) : essFRG ι R M where
 end FiniteReflectionGroup
 
 variable {ι E F : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [SeminormedAddCommGroup F]
-  [InnerProductSpace ℝ F] (Φ : RootSystem ι ℝ E F) [Φ.IsReduced]
+  [InnerProductSpace ℝ F] (Φ : IsRootSystem ι ℝ E F) [Φ.IsReduced]
 
-structure PositiveRootSystem (Φ : RootSystem ι ℝ E F) (p : E) where
+structure PositiveRootSystem (Φ : IsRootSystem ι ℝ E F) (p : E) where
   pos_index : Set ι
   p_ne_zero : p ≠ 0
   inner_ne_zero : ∀ i : pos_index, inner ℝ (Φ.root i) p ≠ 0
@@ -86,20 +88,23 @@ structure SimpleRootSystem (p : E) (P : PositiveRootSystem Φ p) where
 
 namespace RootPairing
 
-theorem exists_PositiveRootSystem (Φ : RootSystem ι ℝ E F) :
+theorem exists_PositiveRootSystem (Φ : IsRootSystem ι ℝ E F) :
     ∃ p : E, ∃ P : PositiveRootSystem Φ p, True := by
   sorry
 
-theorem exists_SimpleRootSystem (Φ : RootSystem ι ℝ E F) :
+theorem exists_SimpleRootSystem (Φ : IsRootSystem ι ℝ E F) :
     ∃ Δ : SimpleRootSystem Φ (exists_PositiveRootSystem Φ).choose (exists_PositiveRootSystem Φ).choose_spec.choose, True := by
   sorry
 
-theorem unique_SimpleRootSystem (Φ : RootSystem ι ℝ E F) :
+theorem unique_SimpleRootSystem (Φ : IsRootSystem ι ℝ E F) :
     ∀ Δ₁ Δ₂ : SimpleRootSystem Φ (exists_PositiveRootSystem Φ).choose (exists_PositiveRootSystem Φ).choose_spec.choose,
       Δ₁ = Δ₂ := by
   sorry
 
-theorem FRG_gen_by_SimpleRootSystem (Φ : RootSystem ι ℝ E F) :
+theorem FRG_gen_by_SimpleRootSystem (Φ :IsRootSystem ι ℝ E F) :
     (FiniteReflectionGroup.RootSystem_to_essFRG Φ).gen_set =
       Set.range fun i : (exists_SimpleRootSystem Φ).choose.simp_index ↦ Module.reflection ((FiniteReflectionGroup.RootSystem_to_essFRG Φ).eq_two i).choose_spec := by
   sorry
+
+
+-/

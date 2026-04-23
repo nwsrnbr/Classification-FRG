@@ -1,25 +1,14 @@
-import Mathlib
+import Mathlib.Data.Matrix.Cartan
 
-variable (a : ℕ → ℝ)
-variable (p q A B: ℝ)
+open CartanMatrix
 
-variable (h0 : a 0 = 1)
-variable (h1 : a 1 = 2)
-variable (hrec : ∀ n, a (n+2) = 2 * a (n+1) - a n)
+def a' (n : ℕ) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
+  Matrix.of fun i j : Fin (n + 1) ↦
+    if h : i < n ∧ j < n then (A n) (i.castLT h.1) (j.castLT h.2)
+    else if i = j then 2
+    else if i = 0 ∧ j = n ∨ j = 0 ∧ i = n then -1
+    else 0
 
-theorem recurrence_induction (h0 : a 0 = 1) (h1 : a 1 = 2)
-    (hrec : ∀ n, a (n+2) = 2 * a (n+1) - a n) : ∀ n, a n = n + 1 := by
-  intro n
-  induction' n using Nat.strongRec with n ih
-  cases n with
-  | zero => simpa
-  | succ n =>
-      cases n with
-      | zero =>
-          simp [h1]; norm_num
-      | succ n =>
-          -- use recurrence + ih n + ih (n+1)
-          have h₁ := ih (n) (Nat.lt_succ_of_lt (Nat.lt_succ_self _))
-          have h₂ := ih (n+1) (Nat.lt_succ_self _)
-          · simp [hrec, h₂, h₁]
-            ring
+theorem det_a' (n : ℕ) (h0 : ¬n = 0) (h1 : ¬n = 1) (v : Fin (n + 1) → ℤ := fun x ↦ 1) :
+    (a' n).det = 0 := by
+  sorry
